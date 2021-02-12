@@ -1,8 +1,24 @@
 #include <iostream>
-
-// -lsfml-system -lsfml-window -lsfml-graphics
-
 #include <SFML/Graphics.hpp>
+
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const sf::Vector2<T>& rhs)
+{
+    return os << "[ " << rhs.x << ", " << rhs.y << " ]";
+}
+
+/**
+ * Returns a top left, bottom right, and size of a rectangle
+ */
+auto getRectangle(const sf::Transform& transform)
+{
+    auto min = transform.transformPoint({0,0});    
+    auto max = transform.transformPoint({1,1});
+
+    auto size = max - min;
+
+    return std::make_tuple( min, max, size );
+}
 
 struct Mine : public sf::Drawable
 {
@@ -19,11 +35,7 @@ struct Mine : public sf::Drawable
     
     void draw(sf::RenderTarget& target, sf::RenderStates states) const
     {
-        // TEMPORARY CODE: MOVE THIS INTO A FUNCTION
-        auto top = states.transform.transformPoint({0,0});
-        auto bottom = states.transform.transformPoint({1,1});
-
-        auto size = bottom - top;
+        auto [ top, bottom, size ] = getRectangle(states.transform);
 
         // Create a drawable field
         sf::RectangleShape field {};
@@ -103,37 +115,37 @@ public:
 
     // Rendering function
 
+    sf::Transform getMineTransform(const sf::Transform& transform) const
+    {
+        auto [ top, bottom, size ] = getRectangle(transform);
+
+        return getMineTransform(top, size);
+    }
+
+    sf::Transform getMineTransform(const sf::Vector2f& top, const sf::Vector2f& size) const
+    {
+        sf::Transform mineTransform {};
+        mineTransform.translate(top);
+        mineTransform.scale({ size.x / (float) cols, size.y / (float) rows });
+
+        return mineTransform;
+    }
+
     void draw(sf::RenderTarget& target, sf::RenderStates states) const
     {
-        // Rectangle boundary
-        auto top = states.transform.transformPoint({0,0});
-        auto bottom = states.transform.transformPoint({1,1});
-
-        auto size = bottom - top;
-
-        // Create a drawable field
-        sf::RectangleShape field {};
-        field.setPosition(top);
-        field.setSize(size);
-        field.setFillColor(sf::Color(155, 155, 155));
-
-        // Draw the field
-        target.draw(field);
-
-        sf::Transform mineTransform { };
-        mineTransform.translate(top);
-
-        mineTransform.scale({ size.x / (float) cols, size.y / (float) rows });
+        // Draw all the mines
+        sf::Transform mineTransform = getMineTransform(states.transform);
 
         for (int y = 0; y < rows; ++y) {
             for (int x = 0; x < cols; ++x) {
                 auto mine = get(x, y);
 
+                target.draw(*mine, sf::Transform(mineTransform).translate(x, y));
+                // mineTransform.translate(1, 1);
 
-                // mineTransform.translate(x, y);
-
-                target.draw(*mine, sf::Transform(mineTransform).translate(x , y));
             }   
+            // mineTransform.translate(-cols, 1);
+
         }
     }
 
@@ -149,6 +161,8 @@ class Minesweeper
 
     Minefield board;
 
+    // Window utils
+
     void centerWindow()
     {
         auto desktop = sf::VideoMode::getDesktopMode();
@@ -158,17 +172,28 @@ class Minesweeper
         ));
     }
 
+    // Board utils
+
+    float top = 0.25;
+
+    sf::Transform getBoardTransform(float top = 0.25) const
+    {
+        sf::Transform transform {};
+        transform.translate(0 * 1.0f, height * top);
+        transform.scale(width * 1.0f, height * (1 - top));
+
+        return transform;
+    }
+
     void drawBoard()
     {
         // Transform for the board
-        sf::Transform transform {};
-        float top = 0.25;
-        transform.translate({ 0 * 1.0f, height * top });
-        transform.scale({ width * 1.0f , height * (1 - top) });
+        sf::Transform transform = getBoardTransform(this->top);
 
-        // Draw the board with the transform
         window.draw(board, transform);
     }
+
+    // Menu utils
 
     void drawMenu()
     {
@@ -201,16 +226,27 @@ public:
     {
         // HANDLE KEY INPUTS HERE
 
+        auto getMouseFromEvent = [](auto eventType) {
+            return sf::Vector2f{ (float) eventType.x, (float) eventType.y };
+        };
+
         sf::Event event;
         while (window.pollEvent(event)) {
 
             if (event.type == sf::Event::Closed) {
                 window.close();
             }
-            if (event.type == sf::Event::KeyPressed) {
+            else if (event.type == sf::Event::KeyPressed) {
                 if (event.key.code == sf::Keyboard::Escape) {
                     window.close();
                 }
+            }
+            else if (event.type == sf::Event::MouseButtonPressed) {
+                const sf::Vector2f mouse = getMouseFromEvent(event.mouseButton);
+
+                auto inverseMine = board.getMineTransform(getBoardTransform()).getInverse();
+                sf::Vector2i mineIndex = static_cast<sf::Vector2i>(inverseMine.transformPoint(mouse));
+
             }
 
         }
@@ -229,6 +265,11 @@ public:
 
 int main(void)
 {
+
+    /*
+    -std=c++17 -lsfml-system -lsfml-window -lsfml-graphics  
+    */
+
     Minesweeper game {
         600, 600,
         30, 30
