@@ -103,6 +103,8 @@ struct Mine : public sf::Drawable
     bool bomb;
     State state = State::Default;
 
+    void reset() { this->bomb = false; this->state = State::Default; }
+
     bool discovered() const { return state == State::Discovered; }
     bool flagged() const { return state == State::Flagged; }
 
@@ -128,7 +130,7 @@ struct Mine : public sf::Drawable
         field.setOutlineThickness(
             discovered() ?
                 2 :
-                0.5f
+                1
         );
         
         target.draw(field);
@@ -192,7 +194,7 @@ class Minefield : public sf::Drawable
     void fillMines()
     {
         auto randomMine = [this]() -> Mine * {
-            return &mines[rand() % cols + (rand() % rows) * cols];
+            return &mines[rand() % (cols * rows)];
         };
 
         for (int i = 0; i < bombs; ++i) {
@@ -247,7 +249,7 @@ public:
             for (int i = -1; i <= 1; ++i) {
                 xi = x + i; yj = y + j;
 
-                if (inBounds(xi, yj) && ((i!=0) && (j!=0)))
+                if (inBounds(xi, yj) && ((i!=0) || (j!=0)))
                     neighbors += get(xi, yj).bomb;
             }
         }
@@ -270,6 +272,20 @@ public:
         }
 
         return mine.bomb;
+    }
+
+    void revealAll() 
+    {
+        for (auto& mine : mines)
+            mine.state = Mine::State::Discovered;
+    }
+
+    void resetAll()
+    {
+        for (auto& mine : mines)
+            mine.reset();
+
+        fillMines();
     }
 
     bool flag(int x, int y)
@@ -330,7 +346,6 @@ class Minesweeper
 {
 
     sf::RenderWindow window;
-    std::size_t width, height; // <-- for convenience
 
     Minefield board;
 
@@ -351,10 +366,14 @@ class Minesweeper
 
     // Board utils
 
-    float top = 0.10;
+    float top = 0.05;
 
     sf::Transform getBoardTransform() const
     {
+        auto [ width, height ] = window.getSize();
+        
+        std::cout << width << ", " << height << "\n";
+
         sf::Transform transform {};
         transform.translate(0 * 1.0f, height * top);
         transform.scale(width * 1.0f, height * (1 - top));
@@ -397,7 +416,7 @@ class Minesweeper
         });
     }
 
-    void handleMouse(const sf::Event &event)
+    void onInput(const sf::Event &event)
     {
         auto [x, y] = getMineIndex(event.mouseButton);
 
@@ -407,7 +426,10 @@ class Minesweeper
         else {
 
             if (event.mouseButton.button == sf::Mouse::Left) {
-                this->lost = board.reveal(x, y);
+                auto bomb = board.reveal(x, y);
+
+                if (bomb)
+                    lose();
             }
 
             else if (event.mouseButton.button == sf::Mouse::Right) {
@@ -422,6 +444,29 @@ class Minesweeper
         return started && !lost;
     }
 
+
+    inline void lose()
+    {
+        this->lost = true;
+
+        // ON LOSE
+        std::cout << "Clicked on a mine!\n";
+        board.revealAll();
+    }
+
+    inline void reset()
+    {
+        started = false;
+        lost = false;
+        board.resetAll();
+    }
+
+    inline void start()
+    {
+        this->started = true;
+        timer.restart();
+    }
+
 public:
 
     Minesweeper(
@@ -434,7 +479,6 @@ public:
             "Minesweeper", 
             sf::Style::None 
         },
-        width { width }, height { height },
         board { cols , rows, bombs }
     {
         centerWindow();
@@ -467,8 +511,11 @@ public:
 
                 else if (event.key.code == sf::Keyboard::Space) {
                     if (!this->started) {
-                        this->started = true;
-                        timer.restart();
+                        start();
+                    } else if (this->lost) {
+                        reset();
+                    } else {
+                        lose();
                     }
                 }
             }
@@ -476,16 +523,10 @@ public:
             // MOUSE FUNCTIONALITY
 
             else if (event.type == sf::Event::MouseButtonPressed) {
-                std::cout << "Mouse button registered\n!";
-
                 if (shouldRun())
-                    handleMouse(event);
+                    onInput(event);
             }
 
-        }
-
-        if (lost) {
-            std::cout << "Clicked on a mine!\n";
         }
 
         // RENDER HERE
@@ -510,9 +551,9 @@ int main(void)
     */
 
     Minesweeper game {
-        600, 600,
+        900, 900,
         30, 30, 
-        100
+        60
     };
 
     std::cout << "Running\n";
