@@ -212,7 +212,7 @@ public:
     const std::size_t cols, rows, bombs;
 
     Minefield(std::size_t cols, std::size_t rows, std::size_t bombs)
-        : cols { cols }, rows { rows }, bombs { bombs }
+        : cols { cols }, rows { rows }, bombs { bombs > cols * rows ? cols * rows : bombs }
     {
         auto size = cols * rows;
 
@@ -261,14 +261,25 @@ public:
      * Setters
      */
 
-    bool reveal(int x, int y) 
+    bool reveal(int x, int y)
     {
-        // NOTE: Doesn't care if the mine is already revealed
-        Mine& mine = get(x, y);
+        if (!inBounds(x, y))
+            return false;
 
-        if (!mine.flagged()) {
+        Mine &mine = get(x, y);
+
+        if (!mine.discovered() && !mine.bomb && !mine.flagged()) {
             mine.neighbors = getNeighbors(x, y);
             mine.state = Mine::State::Discovered;
+
+            if (mine.neighbors == 0) {
+                for (int j = -1; j <= 1; ++j) {
+                    for (int i = -1; i <= 1; ++i) {
+                        if (i != 0 || j != 0)
+                            reveal(x + i, y + j);
+                    }
+                }
+            }
         }
 
         return mine.bomb;
@@ -366,14 +377,12 @@ class Minesweeper
 
     // Board utils
 
-    float top = 0.05;
+    float top = 0.00;
 
     sf::Transform getBoardTransform() const
     {
         auto [ width, height ] = window.getSize();
         
-        std::cout << width << ", " << height << "\n";
-
         sf::Transform transform {};
         transform.translate(0 * 1.0f, height * top);
         transform.scale(width * 1.0f, height * (1 - top));
@@ -541,7 +550,64 @@ public:
 
 };
 
-int main(void)
+/**
+ * Command line options
+ */ 
+
+struct Difficulty
+{
+
+    const std::size_t cols, rows, bombs;
+
+    Difficulty(std::size_t cols, std::size_t rows, std::size_t bombs) :
+        cols { cols }, rows { rows }, bombs { bombs }
+    {
+    }
+
+    const static Difficulty EASY;
+    const static Difficulty INTERMIEDIATE;
+    const static Difficulty EXPERT;
+
+    const static Difficulty DEFAULT;
+};
+
+const Difficulty Difficulty::EASY = Difficulty(8, 8, 10);
+const Difficulty Difficulty::INTERMIEDIATE = Difficulty(16, 16, 40);
+const Difficulty Difficulty::EXPERT = Difficulty(16, 30, 90);
+
+const Difficulty Difficulty::DEFAULT = Difficulty::INTERMIEDIATE;
+#include <cstring>
+Difficulty getDifficulty(int argc, char ** argv)
+{
+    argc--;
+    
+    if (argc == 0) {
+        return Difficulty::DEFAULT;
+    }
+
+    else if (argc == 1) {
+        if (std::strcmp("easy", argv[1]) == 0)
+            return Difficulty::EASY;
+        else if (std::strcmp("intermediate", argv[1]) == 0)
+            return Difficulty::INTERMIEDIATE;
+        else if (std::strcmp("expert", argv[1]) == 0)
+            return Difficulty::EXPERT;
+        else
+            return Difficulty::DEFAULT;
+    }
+     
+    else if (argc == 3) {
+        std::size_t cols = std::atoi(argv[1]),
+                    rows = std::atoi(argv[2]),
+                    bombs = std::atoi(argv[3]);
+
+        return Difficulty(cols, rows, bombs);
+    }
+
+    throw std::runtime_error("Could not parse difficulty from command line arguments");
+}
+
+int main(int argc, char ** argv)
 {
 
     /*
@@ -550,10 +616,11 @@ int main(void)
     -std=c++17 -lsfml-system -lsfml-window -lsfml-graphics  
     */
 
-    Minesweeper game {
+    auto [ cols, rows, bombs ] = getDifficulty(argc, argv); 
+
+    Minesweeper game{
         900, 900,
-        30, 30, 
-        60
+        cols, rows, bombs
     };
 
     std::cout << "Running\n";
