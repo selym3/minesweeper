@@ -194,6 +194,7 @@ class Minefield : public sf::Drawable
     void fillMines()
     {
         auto randomMine = [this]() -> Mine * {
+            // TODO: fix randomness algorithm
             return &mines[rand() % (cols * rows)];
         };
 
@@ -360,9 +361,11 @@ class Minesweeper
 
     Minefield board;
 
+    // TODO: add more helper functions to control these properly
     bool started = false, 
             lost = false;
     sf::Clock timer;
+    double lastTime;
 
     // Window utils
 
@@ -377,7 +380,7 @@ class Minesweeper
 
     // Board utils
 
-    float top = 0.00;
+    float top = 0.05;
 
     sf::Transform getBoardTransform() const
     {
@@ -400,8 +403,46 @@ class Minesweeper
 
     // Menu utils
 
+    sf::Transform getMenuTransform() const
+    {
+        auto [ width, height ] = window.getSize();
+
+        sf::Transform tfm {};
+        tfm.scale(width * 1.0f, height * top);
+
+        return tfm;
+    }
+
+    inline double getTimeSeconds() const
+    {
+        if (lost)
+            return lastTime;
+        else if (started)
+            return timer.getElapsedTime().asSeconds();
+        // else if (lost) order matters, because started and lost can both be true
+            // return lastTime;
+        else 
+            return 0.0;
+    }
+
     void drawMenu()
     {
+
+        auto fontLoad = FontLoader::load("./resources/source-code.ttf");
+
+        auto [ top, bottom, size ] = getRectangle(getMenuTransform());
+
+        if (fontLoad.has_value()) {
+            auto text = getText(
+                std::to_string(getTimeSeconds()),
+                *fontLoad,
+                size.y,
+                sf::Color::Black,
+                { 0, -0.2f * size.y }// arbitrary position fixing
+            );
+
+            window.draw(text);
+        }
 
     }
 
@@ -456,6 +497,7 @@ class Minesweeper
 
     inline void lose()
     {
+        lastTime = getTimeSeconds();
         this->lost = true;
 
         // ON LOSE
