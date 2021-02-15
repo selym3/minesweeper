@@ -1,13 +1,14 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
 
-#include <sstream>
+#include <cstring>
 #include <unordered_map>
-
 
 #include <optional>
 #include <vector>
 #include <cstdlib>
+
+#include "./random_engine.hpp"
 
 namespace FontLoader
 {
@@ -193,9 +194,10 @@ class Minefield : public sf::Drawable
 
     void fillMines()
     {
+        static auto RANDOM_ENGINE = Random::getEngine<std::size_t>(0, cols * rows);
+
         auto randomMine = [this]() -> Mine * {
-            // TODO: fix randomness algorithm
-            return &mines[rand() % (cols * rows)];
+            return &mines[RANDOM_ENGINE()];
         };
 
         for (int i = 0; i < bombs; ++i) {
@@ -618,7 +620,7 @@ const Difficulty Difficulty::INTERMIEDIATE = Difficulty(16, 16, 40);
 const Difficulty Difficulty::EXPERT = Difficulty(16, 30, 90);
 
 const Difficulty Difficulty::DEFAULT = Difficulty::INTERMIEDIATE;
-#include <cstring>
+
 Difficulty getDifficulty(int argc, char ** argv)
 {
     argc--;
