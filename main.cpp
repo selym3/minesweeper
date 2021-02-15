@@ -8,74 +8,14 @@
 #include <vector>
 #include <cstdlib>
 
-#include "./random_engine.hpp"
+#include "./headers/utils/random_engine.hpp"
+#include "./headers/utils/font_loader.hpp"
 
-namespace FontLoader
-{
-
-    using FontLoad = std::optional<std::reference_wrapper<const sf::Font>>;
-
-    static FontLoad load(const std::string& path)
-    {
-        // LOOKUP TABLE
-        static std::unordered_map<std::string, sf::Font> LOOKUP_TABLE;
-
-        // ALGORITHM
-
-        auto fontEntry = LOOKUP_TABLE.find(path);
-        bool contains = fontEntry != LOOKUP_TABLE.end();
-
-        if (contains) {
-            return std::ref(fontEntry->second);
-        } else {
-
-            sf::Font font;
-
-            bool loaded = font.loadFromFile(path);
-
-            if (loaded) {
-                auto entry = LOOKUP_TABLE.insert({ path, font });
-
-                return std::ref(entry.first->second);
-
-            } else {
-                return std::nullopt;
-            }
-
-        }
-
-    }
-
-};
-
-sf::Text getText(
-    const std::string &txt,
-    const sf::Font &font,
-    unsigned int txtSize = 12,
-    sf::Color color = sf::Color::Black,
-    sf::Vector2f position = sf::Vector2f{0, 0},
-    sf::Text::Style style = sf::Text::Style::Regular)
-{
-    sf::Text text;
-
-    text.setCharacterSize(txtSize);
-
-    // text.setScale((float) txtSize, (float) txtSize);
-    text.setPosition(position);
-
-    text.setFont(font);
-    text.setFillColor(color);
-    text.setStyle(style);
-
-    text.setString(txt);
-    return text;
-}
-
-template <typename T>
-std::ostream& operator<<(std::ostream& os, const sf::Vector2<T>& rhs)
-{
-    return os << "[ " << rhs.x << ", " << rhs.y << " ]";
-}
+// template <typename T>
+// std::ostream& operator<<(std::ostream& os, const sf::Vector2<T>& rhs)
+// {
+//     return os << "[ " << rhs.x << ", " << rhs.y << " ]";
+// }
 
 /**
  * Returns a top left, bottom right, and size of a rectangle
@@ -146,7 +86,7 @@ struct Mine : public sf::Drawable
             top.y -= size.y * 0.2;
 
             if (!text.empty()) {
-                target.draw(getText(
+                target.draw(FontLoader::getText(
                     text,
                     *fontLoad,
                     size.y,
@@ -435,7 +375,7 @@ class Minesweeper
         auto [ top, bottom, size ] = getRectangle(getMenuTransform());
 
         if (fontLoad.has_value()) {
-            auto text = getText(
+            auto text = FontLoader::getText(
                 std::to_string(getTimeSeconds()),
                 *fontLoad,
                 size.y,
