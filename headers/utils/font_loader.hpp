@@ -4,7 +4,7 @@
 #include <optional>
 #include <string>
 
-#include <SFML/Graphics/Text.hpp>
+#include <SFML/Graphics/Font.hpp>
 
 namespace FontLoader
 {
@@ -22,20 +22,6 @@ namespace FontLoader
      */
     FontLoad load(const std::string& path);
 
-    /**
-     * Returns a graphical text structure that can be drawn. 
-     * 
-     * It takes text, font, text size, color, position, and style. 
-     */
-    sf::Text getText(
-        const std::string &txt,
-        const sf::Font &font,
-        unsigned int txtSize = 12,
-        sf::Color color = sf::Color::Black,
-        sf::Vector2f position = sf::Vector2f{0, 0},
-        sf::Text::Style style = sf::Text::Style::Regular
-    );
-    
 }
 
 #endif

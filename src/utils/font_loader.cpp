@@ -33,27 +33,3 @@ FontLoader::FontLoad FontLoader::load(const std::string &path)
         }
     }
 }
-
-sf::Text FontLoader::getText(
-    const std::string &txt,
-    const sf::Font &font,
-    unsigned int txtSize,
-    sf::Color color,
-    sf::Vector2f position,
-    sf::Text::Style style
-)
-{
-    sf::Text text;
-
-    text.setCharacterSize(txtSize);
-
-    // text.setScale((float) txtSize, (float) txtSize);
-    text.setPosition(position);
-
-    text.setFont(font);
-    text.setFillColor(color);
-    text.setStyle(style);
-
-    text.setString(txt);
-    return text;
-}
