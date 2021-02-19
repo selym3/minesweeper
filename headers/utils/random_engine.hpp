@@ -3,23 +3,16 @@
 
 #include <random>
 #include <functional>
+#include <type_traits>
 
 namespace Random
 {
-    template <typename T>
+    template <typename T, typename D = typename std::conditional<std::is_integral<T>::value, std::uniform_int_distribution<T>, std::uniform_real_distribution<T>>::type>
     inline auto getEngine(
         const T &min = std::numeric_limits<T>::min(),
         const T &max = std::numeric_limits<T>::max())
     {
-
-        // TODO: The twister state space is bigger than the seed returned by random_device
-        std::mt19937 twister{std::random_device{}()};
-
-        if constexpr (std::is_integral<T>::value)
-            return std::bind(std::uniform_int_distribution<T>(min, max), twister);
-        else
-            return std::bind(std::uniform_real_distribution<T>(min, max), twister);
-
+        return std::bind(D(min, max), std::mt19937{std::random_device{}()});
     }
 }
 

@@ -6,17 +6,13 @@
 
 void Minefield::fillMines()
 {
-    static auto RANDOM_ENGINE = Random::getEngine<std::size_t>(0, cols * rows);
-
-    auto randomMine = [this]() -> Mine * {
-        return &mines[RANDOM_ENGINE()];
-    };
+    auto RANDOM_ENGINE = Random::getEngine<std::size_t>(0, mines.size() - 1);
 
     for (int i = 0; i < bombs; ++i) {
-        Mine *mine = randomMine();
+        Mine *mine = &mines[RANDOM_ENGINE()];
 
         while (mine->bomb)
-            mine = randomMine();
+            mine = &mines[RANDOM_ENGINE()];
 
         mine->bomb = true;
     }
@@ -100,8 +96,17 @@ bool Minefield::reveal(int x, int y)
 
 void Minefield::revealAll()
 {
-    for (auto& mine : mines)
-        mine.state = Mine::State::Discovered;
+    for (int y = 0; y < rows; ++y) {
+        for (int x = 0; x < cols; ++x) {
+            Mine& mine = get(x, y);
+
+            mine.state = Mine::State::Discovered;
+            mine.neighbors = getNeighbors(x, y);
+        }
+    }
+
+    // for (auto& mine : mines)
+        // mine.state = Mine::State::Discovered;
 }
 
 void Minefield::resetAll()

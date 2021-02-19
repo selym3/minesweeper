@@ -4,7 +4,7 @@ Classic minesweeper implementation in C++
 
 ## issues
 
-* there is an issue with freeing and malloc at the beginning / end of execution. There are no manual frees in the code, so the program needs to be debugged
+* ...
 
 ## todo
 
