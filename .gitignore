@@ -34,3 +34,4 @@
 # my stuff
 main
 .vscode
+*.qtclang

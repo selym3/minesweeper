@@ -91,7 +91,7 @@ bool Minefield::reveal(int x, int y)
         }
     }
 
-    return mine.bomb;
+    return !mine.flagged() && mine.bomb;
 }
 
 void Minefield::revealAll()
