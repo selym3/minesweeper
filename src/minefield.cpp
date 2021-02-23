@@ -3,19 +3,26 @@
 #include "../headers/utils/utils.hpp"
 
 #include <SFML/Graphics/RenderTarget.hpp>
+#include <algorithm>
 
-void Minefield::fillMines()
+void Minefield::shuffleMines()
 {
-    auto RANDOM_ENGINE = Random::getEngine<std::size_t>(0, mines.size() - 1);
 
-    for (int i = 0; i < bombs; ++i) {
-        Mine *mine = &mines[RANDOM_ENGINE()];
+    std::shuffle(mines.begin(), mines.end(), Random::getEngine());
 
-        while (mine->bomb)
-            mine = &mines[RANDOM_ENGINE()];
+    // auto RANDOM_ENGINE = Random::getEngine<std::size_t>(0, mines.size() - 1);
+    // for (int i = 0; i < bombs; ++i) {
+    //     Mine *mine = &mines[RANDOM_ENGINE()];
+    //     while (mine->bomb)
+    //         mine = &mines[RANDOM_ENGINE()];
+    //     mine->bomb = true;
+    // }
+}
 
-        mine->bomb = true;
-    }
+void Minefield::setMines(/* int mines */)
+{
+    for (int i = 0; i < mines.size(); ++i)
+        mines[i].bomb = (i < bombs);
 }
 
 Minefield::Minefield(std::size_t cols, std::size_t rows, std::size_t bombs) : 
@@ -26,7 +33,9 @@ Minefield::Minefield(std::size_t cols, std::size_t rows, std::size_t bombs) :
     auto size = cols * rows;
 
     mines.resize(size);
-    fillMines();
+
+    setMines();
+    shuffleMines();
 }
 
 /***********
@@ -114,7 +123,8 @@ void Minefield::resetAll()
     for (auto& mine : mines)
         mine.reset();
 
-    fillMines();
+    setMines();
+    // shuffleMines();
 }
 
 bool Minefield::flag(int x, int y)

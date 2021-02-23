@@ -15,11 +15,16 @@ class Minefield : public sf::Drawable
     std::vector<Mine> mines;
 
     /**
-     * Sets some of the bombs to mines based on the 
-     * number of bombs passed in. Should be used when all
-     * the mines aren't bombs.
+     * Moves around the bombs inside the minefield. There should
+     * already exist the right amount of bombs.
      */
-    void fillMines();
+    void shuffleMines();
+
+    /**
+     * Ensures that there are bomb number of bombs inside 
+     * the mine vector
+     */
+    void setMines();
 
 public:
 
