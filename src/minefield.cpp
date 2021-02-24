@@ -7,16 +7,11 @@
 
 void Minefield::shuffleMines()
 {
-
-    std::shuffle(mines.begin(), mines.end(), Random::getEngine());
-
-    // auto RANDOM_ENGINE = Random::getEngine<std::size_t>(0, mines.size() - 1);
-    // for (int i = 0; i < bombs; ++i) {
-    //     Mine *mine = &mines[RANDOM_ENGINE()];
-    //     while (mine->bomb)
-    //         mine = &mines[RANDOM_ENGINE()];
-    //     mine->bomb = true;
-    // }
+    std::shuffle(
+        mines.begin(), 
+        mines.end(), 
+        Random::getEngine()
+    );
 }
 
 void Minefield::setMines(/* int mines */)
@@ -34,8 +29,7 @@ Minefield::Minefield(std::size_t cols, std::size_t rows, std::size_t bombs) :
 
     mines.resize(size);
 
-    setMines();
-    shuffleMines();
+    resetAll();
 }
 
 /***********

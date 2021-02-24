@@ -3,54 +3,66 @@
 
 #include "minefield.hpp"
 #include <SFML/Graphics/RenderWindow.hpp>
-#include <SFML/Window/Event.hpp>
 
 class Minesweeper 
 {
-
-    sf::RenderWindow window;
-
+private:
     Minefield board;
 
-    // TODO: add more helper functions to control these properly
-    bool started = false, 
-            lost = false;
+    /**
+     * GameState data
+     */
+
+    enum GameState {
+        LOST,
+        PLAYING,
+        RESET
+    };
+
+    GameState state = GameState::RESET;
+
     sf::Clock timer;
     double lastTime;
 
-    // Window utils
-
-    void centerWindow();
-
-    // Board utils
-
-    float top = 0.05;
-
-    sf::Transform getBoardTransform() const;
-
-    void drawBoard();
-    
-    // Menu utils
-
-    sf::Transform getMenuTransform() const;
-
     inline double getTimeSeconds() const;
-    void drawMenu();
 
-    // Event utils
-
-    inline sf::Vector2i getMineIndex(const sf::Vector2f in) const;
-    inline sf::Vector2i getMineIndex(const sf::Event::MouseButtonEvent& event) const;
-
-    void onInput(const sf::Event &event);
-
-    // Game states
-
-    inline bool shouldRun() const;
+    unsigned int clicks = 0;
 
     inline void lose();
     inline void reset();
     inline void start();
+
+private:
+
+    /**
+     * Event data
+     */
+
+    inline sf::Vector2i getMineIndex(const sf::Vector2f in) const;
+
+    void onClick(const sf::Event &event);
+
+private:
+    sf::RenderWindow window;
+
+    /**
+     * Rendering data
+     */
+
+    float top = 0.05;
+
+    // Board
+    sf::Transform getBoardTransform() const;
+    void drawBoard();
+    
+    // Menu
+    sf::Transform getMenuTransform() const;
+    void drawMenu();
+
+private:
+
+    void handleInput();
+    void draw();
 
 public:
 

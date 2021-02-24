@@ -2,6 +2,7 @@
 #include "../headers/utils/utils.hpp"
 #include "../headers/utils/font_loader.hpp"
 
+#include <SFML/Window/Event.hpp>
 #include <iostream>
 // Constructor
 
@@ -17,17 +18,21 @@ Minesweeper::Minesweeper(
     },
     board { cols, rows, bombs }
 {
-    // centerWindow();
 }
 
 // MAIN FUNCTION
 
 void Minesweeper::execute()
 {
-    // HANDLE USER INPUTS HERE
+    handleInput();
+    draw();
+}
 
+void Minesweeper::handleInput()
+{
     sf::Event event;
     while (window.pollEvent(event)) {
+        // handleEvent(event);
 
         // EXIT FUNCTIONS
 
@@ -43,11 +48,11 @@ void Minesweeper::execute()
             }
 
             else if (event.key.code == sf::Keyboard::Space) {
-                if (!this->started) {
+                if (state == GameState::RESET) {
                     start();
-                } else if (this->lost) {
+                } else if (state == GameState::LOST) {
                     reset();
-                } else {
+                } else if (state == GameState::PLAYING) {
                     lose();
                 }
             }
@@ -56,31 +61,19 @@ void Minesweeper::execute()
         // MOUSE FUNCTIONALITY
 
         else if (event.type == sf::Event::MouseButtonPressed) {
-            if (shouldRun())
-                onInput(event);
+            if (state == GameState::PLAYING)
+                onClick(event);
         }
 
     }
-
-    // RENDER HERE
-
-    window.clear(sf::Color::White);
-
-    drawBoard();
-    drawMenu();
-
-    window.display();
 }
 
-// WINDOW UTILS
-
-void Minesweeper::centerWindow()
+void Minesweeper::draw() 
 {
-    auto desktop = sf::VideoMode::getDesktopMode();
-    window.setPosition(sf::Vector2i(
-        desktop.width / 2 - window.getSize().x / 2,
-        desktop.height / 2 - window.getSize().y / 2
-    ));
+    window.clear(sf::Color::White);
+    drawBoard();
+    drawMenu();
+    window.display();
 }
 
 // BOARD DRAWING UTILS
@@ -118,12 +111,10 @@ sf::Transform Minesweeper::getMenuTransform() const
 
 inline double Minesweeper::getTimeSeconds() const
 {
-    if (lost)
+    if (state == GameState::LOST)
         return lastTime;
-    else if (started)
+    else if (state == GameState::PLAYING)
         return timer.getElapsedTime().asSeconds();
-    // else if (lost) order matters, because started and lost can both be true
-        // return lastTime;
     else 
         return 0.0;
 }
@@ -161,17 +152,12 @@ inline sf::Vector2i Minesweeper::getMineIndex(const sf::Vector2f in) const
     );
 }
 
-inline sf::Vector2i Minesweeper::getMineIndex(const sf::Event::MouseButtonEvent& event) const
+void Minesweeper::onClick(const sf::Event &event)
 {
-    return getMineIndex({
-        (float) event.x,
-        (float) event.y
+    auto [x, y] = getMineIndex({
+        (float) event.mouseButton.x,
+        (float) event.mouseButton.y
     });
-}
-
-void Minesweeper::onInput(const sf::Event &event)
-{
-    auto [x, y] = getMineIndex(event.mouseButton);
 
     if (!board.inBounds(x, y))
         std::cout << "Mine is out of bounds " << x << ", " << y << "!\n";
@@ -181,7 +167,14 @@ void Minesweeper::onInput(const sf::Event &event)
         if (event.mouseButton.button == sf::Mouse::Left) {
             auto bomb = board.reveal(x, y);
 
-            if (bomb)
+            if (clicks == 0) {
+                while (bomb) {
+                    board.resetAll();
+                    bomb = board.reveal(x, y);
+                }
+            } 
+
+            else if (bomb)
                 lose();
         }
 
@@ -189,20 +182,19 @@ void Minesweeper::onInput(const sf::Event &event)
             bool flagged = board.flag(x, y);
         }
 
+        clicks++;
+
     }
+
 }
 
 // GAME STATE SYSTEM
 
-inline bool Minesweeper::shouldRun() const
-{
-    return started && !lost;
-}
-
 inline void Minesweeper::lose()
 {
     lastTime = getTimeSeconds();
-    this->lost = true;
+    
+    state = GameState::LOST;
 
     // ON LOSE
     std::cout << "Clicked on a mine!\n";
@@ -212,14 +204,15 @@ inline void Minesweeper::lose()
 
 inline void Minesweeper::reset()
 {
-    started = false;
-    lost = false;
+    state = GameState::RESET;
+
+    clicks = 0;
     board.resetAll();
 }
 
 inline void Minesweeper::start()
 {
-    this->started = true;
+    state = GameState::PLAYING;
     timer.restart();
 }
 
