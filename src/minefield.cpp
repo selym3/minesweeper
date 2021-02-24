@@ -124,7 +124,7 @@ void Minefield::resetAll()
         mine.reset();
 
     setMines();
-    // shuffleMines();
+    shuffleMines();
 }
 
 bool Minefield::flag(int x, int y)

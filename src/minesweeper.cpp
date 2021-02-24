@@ -2,6 +2,7 @@
 #include "../headers/utils/utils.hpp"
 #include "../headers/utils/font_loader.hpp"
 
+#include <iostream>
 // Constructor
 
 Minesweeper::Minesweeper(
@@ -11,12 +12,12 @@ Minesweeper::Minesweeper(
 ) :
     window { 
         sf::VideoMode(width, height), 
-        "Minesweeper", 
+        "Minesweeper",
         sf::Style::None 
     },
-    board { cols , rows, bombs }
+    board { cols, rows, bombs }
 {
-    centerWindow();
+    // centerWindow();
 }
 
 // MAIN FUNCTION
@@ -88,7 +89,7 @@ sf::Transform Minesweeper::getBoardTransform() const
 {
     auto [ width, height ] = window.getSize();
     
-    sf::Transform transform {};
+    sf::Transform transform;
     transform.translate(0 * 1.0f, height * top);
     transform.scale(width * 1.0f, height * (1 - top));
 
@@ -109,7 +110,7 @@ sf::Transform Minesweeper::getMenuTransform() const
 {
     auto [ width, height ] = window.getSize();
 
-    sf::Transform tfm {};
+    sf::Transform tfm;
     tfm.scale(width * 1.0f, height * top);
 
     return tfm;
@@ -167,8 +168,6 @@ inline sf::Vector2i Minesweeper::getMineIndex(const sf::Event::MouseButtonEvent&
         (float) event.y
     });
 }
-
-#include <iostream>
 
 void Minesweeper::onInput(const sf::Event &event)
 {
